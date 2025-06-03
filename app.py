@@ -67,4 +67,4 @@ if st.button("🧪 Prédire"):
 
 # --- Bouton de rafraîchissement ---
 if st.button("🔄 Recommencer"):
-    st.experimental_rerun()
+    st.rerun()
