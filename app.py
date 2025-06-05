@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn import svm
+#from sklearn import svm
+from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
 
 # ---------- Chargement des données ----------
@@ -28,7 +29,18 @@ X_train, X_test, Y_train, Y_test = train_test_split(
 )
 
 # ---------- Modèle ----------
-classifier = svm.SVC(kernel='linear', probability=True)
+#classifier = svm.SVC(kernel='linear', probability=True)
+classifier = XGBClassifier(
+    objective='binary:logistic',
+    eval_metric='logloss',
+    use_label_encoder=False,
+    n_estimators=100,
+    max_depth=3,
+    learning_rate=0.1,
+    random_state=42
+)
+
+# Entraînement du modèle
 classifier.fit(X_train, Y_train)
 
 # Évaluation
