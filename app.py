@@ -7,20 +7,32 @@ from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
 
-# ---------- Chargement des données ----------
-diabetes = pd.read_csv("diabetes.csv")
+# Configuration de la page
+st.set_page_config(page_title="Prédiction Diabète", layout="centered")
 
-# Remplacement des zéros anormaux par la médiane pour certaines colonnes
-for col in ['BloodPressure', 'Glucose', 'BMI', 'Insulin', 'SkinThickness']:
-    diabetes[col] = diabetes[col].replace(0, diabetes[col].median())
+# ---------- Chargement des données ----------
+@st.cache_data
+def load_data():
+    df = pd.read_csv("diabetes.csv")
+    # Remplacement des zéros anormaux par la médiane pour certaines colonnes
+    for col in ['BloodPressure', 'Glucose', 'BMI', 'Insulin', 'SkinThickness']:
+        df[col] = df[col].replace(0, df[col].median())
+    return df
+
+diabetes = load_data()
 
 # Séparation des variables
 X = diabetes.drop('Outcome', axis=1)
 Y = diabetes['Outcome']
 
 # Standardisation
-scaler = StandardScaler()
-scaler.fit(X)
+@st.cache_resource
+def get_scaler(X):
+    scaler = StandardScaler()
+    scaler.fit(X)
+    return scaler
+
+scaler = get_scaler(X)
 X_scaled = scaler.transform(X)
 
 # Division du jeu de données
@@ -30,18 +42,23 @@ X_train, X_test, Y_train, Y_test = train_test_split(
 
 # ---------- Modèle ----------
 #classifier = svm.SVC(kernel='linear', probability=True)
-classifier = XGBClassifier(
-    objective='binary:logistic',
-    eval_metric='logloss',
-    use_label_encoder=False,
-    n_estimators=100,
-    max_depth=3,
-    learning_rate=0.1,
-    random_state=42
-)
+@st.cache_resource
+def train_model():
+    #clf = svm.SVC(kernel='linear', probability=True)
+    clf = XGBClassifier(
+        objective='binary:logistic',
+        eval_metric='logloss',
+        use_label_encoder=False,
+        n_estimators=100,
+        max_depth=3,
+        learning_rate=0.1,
+        random_state=42
+    )
+    # Entraînement du modèle
+    clf.fit(X_train, Y_train)
+    return clf
 
-# Entraînement du modèle
-classifier.fit(X_train, Y_train)
+classifier = train_model()
 
 # Évaluation
 train_pred = classifier.predict(X_train)
@@ -50,7 +67,6 @@ train_acc = accuracy_score(Y_train, train_pred)
 test_acc = accuracy_score(Y_test, test_pred)
 
 # ---------- Interface Streamlit ----------
-st.set_page_config(page_title="Prédiction Diabète", layout="centered")
 st.title("🩺 Prédiction du Diabète (Modèle fiable à 78%)")
 
 st.write(f"### 🔍 Précision entraînement : {train_acc*100:.2f}%")
